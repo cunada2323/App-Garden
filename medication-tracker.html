@@ -1,0 +1,2621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medication Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: #4A9B9B;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .icon-btn:hover {
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .nav {
+            display: flex;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            background: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .nav-btn.active {
+            background: #4A9B9B;
+            color: white;
+        }
+
+        .nav-btn:hover:not(.active) {
+            background: #f0f0f0;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        .time-block {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .time-block.current {
+            border: 2px solid #4A9B9B;
+        }
+
+        .time-blocks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .compact-time-block {
+            background: #e8f4f4;
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            position: relative;
+        }
+
+        .compact-time-block:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+
+        .compact-time-block.current {
+            border-color: #4A9B9B;
+            background: #d4edeb;
+        }
+
+        .compact-time-block.all-taken {
+            background: #e8f5e9;
+        }
+
+        .compact-time-block.has-skipped {
+            background: #fff8f0;
+        }
+
+        .compact-time-header {
+            margin-bottom: 0.75rem;
+            text-align: center;
+        }
+
+        .compact-time-time {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .compact-pill-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
+            gap: 0.5rem;
+            justify-items: center;
+        }
+
+        .compact-pill-item {
+            position: relative;
+            padding: 0.25rem;
+            border-radius: 6px;
+            border: 2px solid transparent;
+        }
+
+        .compact-pill-item.taken {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+        }
+
+        .compact-pill-item.skipped {
+            background: #fff3e0;
+            border-color: #FF9800;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: #4CAF50;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .time-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .time-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #4A9B9B;
+        }
+
+        .mark-all-btn {
+            background: #4A9B9B;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .mark-all-btn:hover {
+            background: #3d8585;
+        }
+
+        .pill-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .pill-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            background: #f9f9f9;
+            position: relative;
+        }
+
+        .pill-visual {
+            width: 50px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pill-visual svg,
+        .compact-pill-item svg,
+        .med-icon svg {
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
+        }
+
+        .pill-name {
+            font-size: 0.85rem;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .pill-dose {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        .dose-checkbox {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .dose-status {
+            width: 100%;
+            height: 100%;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dose-status.taken {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+        }
+
+        .dose-status.skipped {
+            background: #FF9800;
+            border-color: #FF9800;
+            color: white;
+        }
+
+        .med-list {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .med-item {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .med-item:hover {
+            background: #f9f9f9;
+        }
+
+        .med-item:last-child {
+            border-bottom: none;
+        }
+
+        .med-icon {
+            width: 50px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .med-info {
+            flex: 1;
+        }
+
+        .med-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .med-subtitle {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .med-stock-low {
+            color: #dc143c;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #4A9B9B;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover {
+            background: #3d8585;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4A9B9B;
+        }
+
+        .appearance-selector {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .appearance-option {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+        }
+
+        .appearance-option.selected {
+            border-color: #4A9B9B;
+            border-width: 3px;
+        }
+
+        .appearance-option svg {
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+        }
+
+        .pill-shape {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dose-schedule {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .time-input-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .time-input-group input {
+            flex: 1;
+        }
+
+        .remove-time-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .add-time-btn {
+            background: #4A9B9B;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .settings-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .settings-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .stock-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .stock-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #4A9B9B;
+            background: white;
+            color: #4A9B9B;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .stock-btn:hover {
+            background: #4A9B9B;
+            color: white;
+        }
+
+        .notification {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: #4CAF50;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 2000;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .notification.show {
+            display: block;
+        }
+
+        .notification.info {
+            background: #2196F3;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .day-checkbox {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .day-checkbox:has(input:checked) {
+            background: #4A9B9B;
+            color: white;
+            border-color: #4A9B9B;
+        }
+
+        .day-checkbox input {
+            margin: 0;
+        }
+
+        .dose-detail-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .dose-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .dose-detail-item.taken {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+        }
+
+        .dose-detail-item.skipped {
+            background: #fff3e0;
+            border-color: #FF9800;
+        }
+
+        .dose-detail-icon {
+            flex-shrink: 0;
+        }
+
+        .dose-detail-info {
+            flex: 1;
+        }
+
+        .dose-detail-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .dose-detail-dose {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .dose-detail-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .dose-action-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .dose-action-btn.taken {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .dose-action-btn.taken:hover {
+            background: #45a049;
+        }
+
+        .dose-action-btn.skipped {
+            background: #FF9800;
+            color: white;
+        }
+
+        .dose-action-btn.skipped:hover {
+            background: #f57c00;
+        }
+
+        .dose-action-btn.unmarked {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .dose-action-btn.unmarked:hover {
+            background: #d0d0d0;
+        }
+
+        .dose-reminder-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .reminder-btn {
+            padding: 0.4rem 0.8rem;
+            border: 1px solid #4A9B9B;
+            background: white;
+            color: #4A9B9B;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .reminder-btn:hover {
+            background: #4A9B9B;
+            color: white;
+        }
+
+        .reminder-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .reminder-info {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.25rem;
+            font-style: italic;
+        }
+
+        .refill-alert-section {
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.15);
+        }
+
+        .refill-alert-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .refill-alert-icon {
+            font-size: 1.5rem;
+        }
+
+        .refill-alert-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #e65100;
+            margin: 0;
+        }
+
+        .refill-alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .refill-alert-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #ffb74d;
+        }
+
+        .refill-alert-item:hover {
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💊 MedTracker</h1>
+        <div class="header-actions">
+            <button class="icon-btn" onclick="showSettings()" title="Settings">⚙️</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <nav class="nav">
+            <button class="nav-btn active" onclick="switchView('home')">Home</button>
+            <button class="nav-btn" onclick="switchView('medications')">Medications</button>
+        </nav>
+
+        <!-- Home View -->
+        <div id="home-view" class="view active">
+            <div id="dose-times-container"></div>
+        </div>
+
+        <!-- Medications View -->
+        <div id="medications-view" class="view">
+            <div class="med-list" id="medications-list"></div>
+            <button class="btn-primary" onclick="showAddMedModal()">+ Add Medication</button>
+        </div>
+    </div>
+
+    <!-- Add/Edit Medication Modal -->
+    <div id="med-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Add Medication</h2>
+                <button class="close-btn" onclick="closeMedModal()">×</button>
+            </div>
+            <form id="med-form" onsubmit="saveMedication(event)">
+                <div class="form-group">
+                    <label class="form-label">Medication Name</label>
+                    <input type="text" class="form-input" id="med-name" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Strength/Dosage</label>
+                    <input type="text" class="form-input" id="med-strength" placeholder="e.g., 100mg">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Pills per Dose</label>
+                    <input type="number" class="form-input" id="pills-per-dose" min="0.5" step="0.5" value="1" placeholder="e.g., 1, 2, 0.5">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Quantity (Pills in Stock)</label>
+                    <input type="number" class="form-input" id="med-quantity" min="0" value="0">
+                    <div class="stock-controls">
+                        <button type="button" class="stock-btn" onclick="showAddStockFromForm()">+ Add Stock</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Refill Alert (When stock falls below)</label>
+                    <input type="number" class="form-input" id="med-refill-alert" min="0" value="7">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Pill Shape</label>
+                    <div class="appearance-selector" id="shape-selector"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Pill Color</label>
+                    <div class="appearance-selector" id="color-selector"></div>
+                </div>
+
+                <div class="form-group" id="color2-group" style="display: none;">
+                    <label class="form-label">Second Color (for dual capsule)</label>
+                    <div class="appearance-selector" id="color2-selector"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Schedule</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="as-needed">
+                        <label for="as-needed">Take as needed (no schedule)</label>
+                    </div>
+                </div>
+
+                <div id="schedule-container">
+                    <div class="form-group">
+                        <label class="form-label">Schedule Type</label>
+                        <select class="form-input" id="schedule-type" onchange="updateScheduleType()">
+                            <option value="daily">Daily</option>
+                            <option value="specific">Specific Days of Week</option>
+                            <option value="interval">Every X Days</option>
+                        </select>
+                    </div>
+
+                    <div id="specific-days-container" class="form-group" style="display: none;">
+                        <label class="form-label">Days of Week</label>
+                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem;">
+                            <label class="day-checkbox">
+                                <input type="checkbox" class="day-check" value="0"> Sun
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" class="day-check" value="1"> Mon
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" class="day-check" value="2"> Tue
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" class="day-check" value="3"> Wed
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" class="day-check" value="4"> Thu
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" class="day-check" value="5"> Fri
+                            </label>
+                            <label class="day-checkbox">
+                                <input type="checkbox" class="day-check" value="6"> Sat
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="interval-container" class="form-group" style="display: none;">
+                        <label class="form-label">Take every</label>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 1rem;">
+                            <input type="number" class="form-input" id="interval-days" min="1" value="2" style="width: 100px;">
+                            <span>days</span>
+                        </div>
+                        
+                        <label class="form-label">Start first dose on:</label>
+                        <select class="form-input" id="interval-start-date">
+                            <option value="0">Today</option>
+                            <option value="1">Tomorrow</option>
+                            <option value="2">Day after tomorrow</option>
+                            <option value="3">In 3 days</option>
+                            <option value="4">In 4 days</option>
+                            <option value="5">In 5 days</option>
+                            <option value="6">In 6 days</option>
+                            <option value="7">In 7 days</option>
+                        </select>
+                        <small style="color: #666; font-size: 0.85rem; margin-top: 0.5rem; display: block;" id="interval-start-preview"></small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Dose Times</label>
+                        <div class="dose-schedule" id="dose-times"></div>
+                        <button type="button" class="add-time-btn" onclick="addDoseTime()">+ Add Time</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Instructions</label>
+                    <textarea class="form-input" id="med-instructions" rows="3" placeholder="e.g., Take with food"></textarea>
+                </div>
+
+                <button type="submit" class="btn-primary">Save Medication</button>
+                <button type="button" class="btn-secondary" id="delete-btn" style="display:none;" onclick="deleteMedication()">Delete Medication</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Settings</h2>
+                <button class="close-btn" onclick="closeSettings()">×</button>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="settings-title">Notifications</h3>
+                <div class="checkbox-group" style="margin-bottom: 1rem;">
+                    <input type="checkbox" id="notifications-enabled" onchange="toggleNotifications()">
+                    <label for="notifications-enabled">Enable dose reminder notifications</label>
+                </div>
+                <small style="color: #666; font-size: 0.85rem; display: block; margin-bottom: 1rem;">
+                    Browser must stay open in background. You'll be prompted to allow notifications.
+                </small>
+                <div id="notification-status" style="padding: 0.75rem; background: #f0f0f0; border-radius: 6px; font-size: 0.9rem; display: none;">
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="settings-title">Refill Reminders</h3>
+                <div class="form-group">
+                    <label class="form-label">Reminder Time</label>
+                    <input type="time" class="form-input" id="refill-reminder-time" 
+                           onchange="updateRefillReminderTime()" 
+                           style="max-width: 200px;">
+                    <small style="color: #666; font-size: 0.85rem; margin-top: 0.5rem; display: block;">
+                        Time of day to receive refill reminders for low-stock medications
+                    </small>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="settings-title">Data Management</h3>
+                <button class="btn-secondary" onclick="exportData()">Export Data (Backup)</button>
+                <button class="btn-secondary" onclick="importData()">Import Data (Restore)</button>
+                <input type="file" id="import-file" accept=".json" style="display:none;" onchange="handleImport(event)">
+            </div>
+
+            <div class="settings-section">
+                <p style="color: #999; font-size: 0.9rem; text-align: center;">
+                    MedTracker v<span id="version-display"></span><br>
+                    All data stored locally in your browser
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dose Detail Modal -->
+    <div id="dose-detail-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="dose-detail-title">Morning - 08:00</h2>
+                <button class="close-btn" onclick="closeDoseDetail()">×</button>
+            </div>
+            
+            <div id="dose-detail-content"></div>
+            
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                <button class="btn-primary" onclick="markAllTakenFromDetail()">Mark All Taken</button>
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <button class="btn-secondary" onclick="snoozeAll()" style="flex: 1;">Snooze All (10 min)</button>
+                    <button class="btn-secondary" onclick="rescheduleAll()" style="flex: 1;">Reschedule All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Stock Modal -->
+    <div id="add-stock-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Update Stock</h2>
+                <button class="close-btn" onclick="closeAddStock()">×</button>
+            </div>
+            
+            <div id="add-stock-content" style="padding: 1rem 0;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div id="add-stock-icon"></div>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 0.25rem;" id="add-stock-name"></div>
+                        <div style="font-size: 0.9rem; color: #666;" id="add-stock-current"></div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Add:</label>
+                    <input type="number" class="form-input" id="add-stock-amount" min="1" step="1" placeholder="Number of pill(s)">
+                </div>
+                
+                <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+                    <button class="btn-secondary" onclick="closeAddStock()" style="flex: 1;">Cancel</button>
+                    <button class="btn-primary" onclick="saveAddStock()" style="flex: 1;">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // App version for data migration
+        const APP_VERSION = '2.1';
+        
+        // Data structure
+        let medications = [];
+        let doseLog = {}; // Format: { 'YYYY-MM-DD': { medId: { time: 'taken'/'skipped'/null } } }
+        let reminders = {}; // Format: { 'YYYY-MM-DD': { medId: { time: { snoozedUntil: timestamp, snoozeCount: 0-3, rescheduledTo: 'HH:MM' } } } }
+        let settings = {
+            refillReminderTime: '09:00', // Default refill reminder time
+            notificationsEnabled: false
+        };
+
+        // Notification system
+        let notificationCheckInterval = null;
+
+        let editingMedId = null;
+
+        // Pill appearance options
+        const shapes = [
+            { id: 'oval', name: 'Oval', svg: '<ellipse cx="25" cy="15" rx="20" ry="12" fill="currentColor"/>' },
+            { id: 'round', name: 'Round', svg: '<circle cx="25" cy="15" r="12" fill="currentColor"/>' },
+            { id: 'capsule', name: 'Capsule', svg: '<rect x="5" y="8" width="40" height="14" rx="7" fill="currentColor"/>' },
+            { id: 'capsule-dual', name: 'Dual Capsule', svg: '<g><path d="M 5 15 Q 5 8, 12 8 L 25 8 L 25 22 L 12 22 Q 5 22, 5 15 Z" fill="COLOR1"/><path d="M 25 8 L 38 8 Q 45 8, 45 15 Q 45 22, 38 22 L 25 22 Z" fill="COLOR2"/></g>', isDual: true },
+            { id: 'oblong', name: 'Oblong', svg: '<rect x="8" y="10" width="34" height="10" rx="5" fill="currentColor"/>' },
+            { id: 'square', name: 'Square', svg: '<rect x="13" y="5" width="24" height="20" rx="2" fill="currentColor"/>' },
+            { id: 'diamond', name: 'Diamond', svg: '<path d="M25,5 L40,15 L25,25 L10,15 Z" fill="currentColor"/>' },
+            { id: 'triangle', name: 'Triangle', svg: '<path d="M25,8 L38,22 L12,22 Z" fill="currentColor"/>' },
+            { id: 'injection', name: 'Injection', svg: '<g fill="currentColor"><rect x="22" y="8" width="6" height="12"/><rect x="20" y="18" width="10" height="2"/><path d="M23,20 L23,24 L27,24 L27,20"/><circle cx="25" cy="6" r="2"/></g>' },
+            { id: 'inhaler', name: 'Inhaler', svg: '<g fill="currentColor"><rect x="18" y="10" width="14" height="16" rx="2"/><rect x="20" y="6" width="10" height="5" rx="1"/><circle cx="25" cy="8" r="1.5"/></g>' }
+        ];
+
+        const colors = [
+            { id: 'white', name: 'White', hex: '#FFFFFF', border: '#ccc' },
+            { id: 'cream', name: 'Cream', hex: '#FFFDD0', border: '#e8e6c0' },
+            { id: 'beige', name: 'Beige', hex: '#F5DEB3' },
+            { id: 'tan', name: 'Tan', hex: '#D2B48C' },
+            { id: 'peach', name: 'Peach', hex: '#FFE5B4' },
+            { id: 'lightyellow', name: 'Light Yellow', hex: '#FFFFE0', border: '#e8e8ca' },
+            { id: 'yellow', name: 'Yellow', hex: '#FFD700' },
+            { id: 'gold', name: 'Gold', hex: '#DAA520' },
+            { id: 'lightorange', name: 'Light Orange', hex: '#FFB347' },
+            { id: 'orange', name: 'Orange', hex: '#FFA500' },
+            { id: 'darkorange', name: 'Dark Orange', hex: '#FF8C00' },
+            { id: 'lightpink', name: 'Light Pink', hex: '#FFB6C1' },
+            { id: 'pink', name: 'Pink', hex: '#FF69B4' },
+            { id: 'rose', name: 'Rose', hex: '#FF007F' },
+            { id: 'salmon', name: 'Salmon', hex: '#FA8072' },
+            { id: 'coral', name: 'Coral', hex: '#FF6B6B' },
+            { id: 'lightred', name: 'Light Red', hex: '#FF6B6B' },
+            { id: 'red', name: 'Red', hex: '#DC143C' },
+            { id: 'darkred', name: 'Dark Red', hex: '#8B0000' },
+            { id: 'maroon', name: 'Maroon', hex: '#800000' },
+            { id: 'lavender', name: 'Lavender', hex: '#E6E6FA', border: '#d0d0e4' },
+            { id: 'lightpurple', name: 'Light Purple', hex: '#DDA0DD' },
+            { id: 'purple', name: 'Purple', hex: '#9370DB' },
+            { id: 'darkpurple', name: 'Dark Purple', hex: '#663399' },
+            { id: 'lightblue', name: 'Light Blue', hex: '#87CEEB' },
+            { id: 'skyblue', name: 'Sky Blue', hex: '#87CEFA' },
+            { id: 'blue', name: 'Blue', hex: '#4169E1' },
+            { id: 'darkblue', name: 'Dark Blue', hex: '#00008B' },
+            { id: 'navy', name: 'Navy', hex: '#000080' },
+            { id: 'teal', name: 'Teal', hex: '#008080' },
+            { id: 'turquoise', name: 'Turquoise', hex: '#40E0D0' },
+            { id: 'lightgreen', name: 'Light Green', hex: '#90EE90' },
+            { id: 'green', name: 'Green', hex: '#32CD32' },
+            { id: 'darkgreen', name: 'Dark Green', hex: '#006400' },
+            { id: 'olive', name: 'Olive', hex: '#808000' },
+            { id: 'lightbrown', name: 'Light Brown', hex: '#CD853F' },
+            { id: 'brown', name: 'Brown', hex: '#8B4513' },
+            { id: 'darkbrown', name: 'Dark Brown', hex: '#654321' },
+            { id: 'lightgray', name: 'Light Gray', hex: '#D3D3D3' },
+            { id: 'gray', name: 'Gray', hex: '#808080' },
+            { id: 'darkgray', name: 'Dark Gray', hex: '#505050' },
+            { id: 'black', name: 'Black', hex: '#000000' }
+        ];
+
+        let selectedShape = 'oval';
+        let selectedColor = 'white';
+        let selectedColor2 = 'white';
+
+        // Initialize app
+        function init() {
+            document.getElementById('version-display').textContent = APP_VERSION;
+            migrateData();
+            loadData();
+            renderShapeSelector();
+            renderColorSelector();
+            renderHome();
+            renderMedications();
+            setupAsNeededToggle();
+            initNotifications();
+        }
+
+        // Notification system
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                return false;
+            }
+
+            if (Notification.permission === 'granted') {
+                return true;
+            }
+
+            if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                return permission === 'granted';
+            }
+
+            return false;
+        }
+
+        async function toggleNotifications() {
+            const checkbox = document.getElementById('notifications-enabled');
+            const statusDiv = document.getElementById('notification-status');
+            
+            if (checkbox.checked) {
+                const granted = await requestNotificationPermission();
+                
+                if (granted) {
+                    settings.notificationsEnabled = true;
+                    saveData();
+                    startNotificationChecks();
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.background = '#e8f5e9';
+                    statusDiv.style.color = '#2e7d32';
+                    statusDiv.textContent = '✓ Notifications enabled - You\'ll receive reminders for scheduled doses';
+                    showNotification('Dose notifications enabled');
+                } else {
+                    checkbox.checked = false;
+                    statusDiv.style.display = 'block';
+                    statusDiv.style.background = '#ffebee';
+                    statusDiv.style.color = '#c62828';
+                    statusDiv.textContent = '✗ Notification permission denied. Please enable in browser settings.';
+                }
+            } else {
+                settings.notificationsEnabled = false;
+                saveData();
+                stopNotificationChecks();
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = '#f0f0f0';
+                statusDiv.style.color = '#666';
+                statusDiv.textContent = 'Notifications disabled';
+                showNotification('Dose notifications disabled');
+            }
+        }
+
+        function initNotifications() {
+            if (settings.notificationsEnabled && Notification.permission === 'granted') {
+                startNotificationChecks();
+            }
+        }
+
+        function startNotificationChecks() {
+            // Check every minute for doses
+            if (notificationCheckInterval) {
+                clearInterval(notificationCheckInterval);
+            }
+            
+            notificationCheckInterval = setInterval(() => {
+                checkAndNotifyDoses();
+            }, 60000); // Check every minute
+            
+            // Check immediately
+            checkAndNotifyDoses();
+        }
+
+        function stopNotificationChecks() {
+            if (notificationCheckInterval) {
+                clearInterval(notificationCheckInterval);
+                notificationCheckInterval = null;
+            }
+        }
+
+        function checkAndNotifyDoses() {
+            if (!settings.notificationsEnabled || Notification.permission !== 'granted') {
+                return;
+            }
+
+            const now = new Date();
+            const currentTime = now.toTimeString().slice(0, 5);
+            const today = now.toISOString().split('T')[0];
+
+            // Collect all doses for this exact time
+            const dosesNow = [];
+            
+            medications.forEach(med => {
+                if (med.asNeeded) return;
+                if (!med.doseTimes || !med.doseTimes.includes(currentTime)) return;
+                if (!shouldTakeMedToday(med)) return;
+                
+                // Check if already taken
+                const status = getDoseStatus(today, med.id, currentTime);
+                if (status === 'taken') return;
+                
+                // Check if snoozed
+                const reminderInfo = getReminderInfo(med.id, currentTime);
+                if (reminderInfo?.snoozedUntil && Date.now() < reminderInfo.snoozedUntil) return;
+                
+                dosesNow.push(med);
+            });
+
+            if (dosesNow.length > 0) {
+                sendDoseNotification(dosesNow, currentTime);
+            }
+
+            // Check for refill reminders
+            const refillReminderTime = settings.refillReminderTime || '09:00';
+            if (currentTime === refillReminderTime) {
+                checkAndNotifyRefills();
+            }
+        }
+
+        function sendDoseNotification(meds, time) {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            // Check if we already notified for this time today
+            const notificationKey = `notified_${today}_${time}`;
+            if (localStorage.getItem(notificationKey)) {
+                return; // Already notified
+            }
+
+            let title, body;
+            
+            if (meds.length === 1) {
+                const med = meds[0];
+                const pillsPerDose = med.pillsPerDose || 1;
+                title = `Time for ${med.name}`;
+                body = `${med.strength || ''} - Take ${pillsPerDose} pill${pillsPerDose !== 1 ? 's' : ''}${med.instructions ? '\n' + med.instructions : ''}`;
+            } else {
+                title = `Time for ${meds.length} medications`;
+                body = meds.map(m => `• ${m.name}${m.strength ? ` (${m.strength})` : ''}`).join('\n');
+            }
+
+            const notification = new Notification(title, {
+                body: body,
+                icon: '💊',
+                tag: `dose-${time}`,
+                requireInteraction: false,
+                silent: false
+            });
+
+            notification.onclick = () => {
+                window.focus();
+                notification.close();
+            };
+
+            // Mark as notified
+            localStorage.setItem(notificationKey, 'true');
+            
+            // Clean up old notification flags (keep only today's)
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('notified_') && !key.includes(today)) {
+                    localStorage.removeItem(key);
+                }
+            });
+        }
+
+        function checkAndNotifyRefills() {
+            const lowStockMeds = medications.filter(med => {
+                return med.quantity !== undefined && med.quantity <= (med.refillAlert || 7);
+            });
+
+            if (lowStockMeds.length === 0) return;
+
+            const today = new Date().toISOString().split('T')[0];
+            const refillKey = `refill_notified_${today}`;
+            
+            if (localStorage.getItem(refillKey)) {
+                return; // Already notified today
+            }
+
+            let title = `${lowStockMeds.length} medication${lowStockMeds.length !== 1 ? 's' : ''} need refilling`;
+            let body = lowStockMeds.map(m => `• ${m.name}: ${m.quantity} left`).join('\n');
+
+            const notification = new Notification(title, {
+                body: body,
+                icon: '⚠️',
+                tag: 'refill-reminder',
+                requireInteraction: false
+            });
+
+            notification.onclick = () => {
+                window.focus();
+                switchView('medications');
+                notification.close();
+            };
+
+            localStorage.setItem(refillKey, 'true');
+        }
+
+        // Data migration system
+        function migrateData() {
+            const storedVersion = localStorage.getItem('medTrackerVersion');
+            
+            if (!storedVersion) {
+                // First time user - set version
+                localStorage.setItem('medTrackerVersion', APP_VERSION);
+                return;
+            }
+
+            if (storedVersion !== APP_VERSION) {
+                // Migration needed
+                console.log(`Migrating data from v${storedVersion} to v${APP_VERSION}`);
+                
+                // Future migrations would go here
+                // For now, we just update the version
+                
+                localStorage.setItem('medTrackerVersion', APP_VERSION);
+                showNotification(`Data migrated from v${storedVersion} to v${APP_VERSION}`, 'info');
+            }
+        }
+
+        // Load data from localStorage
+        function loadData() {
+            const storedMeds = localStorage.getItem('medications');
+            const storedLog = localStorage.getItem('doseLog');
+            const storedReminders = localStorage.getItem('reminders');
+            const storedSettings = localStorage.getItem('settings');
+
+            if (storedMeds) medications = JSON.parse(storedMeds);
+            if (storedLog) doseLog = JSON.parse(storedLog);
+            if (storedReminders) reminders = JSON.parse(storedReminders);
+            if (storedSettings) settings = Object.assign(settings, JSON.parse(storedSettings));
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('medications', JSON.stringify(medications));
+            localStorage.setItem('doseLog', JSON.stringify(doseLog));
+            localStorage.setItem('reminders', JSON.stringify(reminders));
+            localStorage.setItem('settings', JSON.stringify(settings));
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.className = 'notification show ' + (type === 'info' ? 'info' : '');
+            setTimeout(() => {
+                notif.className = 'notification';
+            }, 3000);
+        }
+
+        // Navigation
+        function switchView(view) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            if (view === 'home') {
+                document.getElementById('home-view').classList.add('active');
+                document.querySelectorAll('.nav-btn')[0].classList.add('active');
+                renderHome();
+            } else if (view === 'medications') {
+                document.getElementById('medications-view').classList.add('active');
+                document.querySelectorAll('.nav-btn')[1].classList.add('active');
+                renderMedications();
+            }
+        }
+
+        // Render pill visual
+        function renderPill(med) {
+            const shape = shapes.find(s => s.id === (med.shape || 'oval')) || shapes[0];
+            const color = colors.find(c => c.id === (med.color || 'white')) || colors[0];
+            const fillColor = color.hex || '#FFFFFF';
+            const strokeColor = color.border || '#555';
+            
+            let svgContent = shape.svg;
+            
+            // Handle dual-color capsule
+            if (shape.isDual && med.color2) {
+                const color2 = colors.find(c => c.id === med.color2) || colors[0];
+                const fillColor2 = color2.hex || '#FFFFFF';
+                svgContent = svgContent
+                    .replace('COLOR1', fillColor)
+                    .replace('COLOR2', fillColor2);
+            } else {
+                svgContent = svgContent
+                    .replace('fill="currentColor"', `fill="${fillColor}"`)
+                    .replace(/currentColor/g, fillColor)
+                    .replace(/COLOR1|COLOR2/g, fillColor);
+            }
+            
+            return `
+                <div class="pill-visual">
+                    <svg viewBox="0 0 50 30" style="width: 50px; height: 30px;">
+                        <g stroke="${strokeColor}" stroke-width="2.5">
+                            ${svgContent}
+                        </g>
+                    </svg>
+                </div>
+            `;
+        }
+
+        // Render small pill visual
+        function renderPillSmall(med) {
+            const shape = shapes.find(s => s.id === (med.shape || 'oval')) || shapes[0];
+            const color = colors.find(c => c.id === (med.color || 'white')) || colors[0];
+            const fillColor = color.hex || '#FFFFFF';
+            const strokeColor = color.border || '#555';
+            
+            let svgContent = shape.svg;
+            
+            // Handle dual-color capsule
+            if (shape.isDual && med.color2) {
+                const color2 = colors.find(c => c.id === med.color2) || colors[0];
+                const fillColor2 = color2.hex || '#FFFFFF';
+                svgContent = svgContent
+                    .replace('COLOR1', fillColor)
+                    .replace('COLOR2', fillColor2);
+            } else {
+                svgContent = svgContent
+                    .replace('fill="currentColor"', `fill="${fillColor}"`)
+                    .replace(/currentColor/g, fillColor)
+                    .replace(/COLOR1|COLOR2/g, fillColor);
+            }
+            
+            return `
+                <svg viewBox="0 0 50 30" style="width: 30px; height: 18px;">
+                    <g stroke="${strokeColor}" stroke-width="2.5">
+                        ${svgContent}
+                    </g>
+                </svg>
+            `;
+        }
+
+        // Get dose status
+        function getDoseStatus(date, medId, time) {
+            if (!doseLog[date] || !doseLog[date][medId]) return '';
+            return doseLog[date][medId][time] || '';
+        }
+
+        // Render home view
+        function renderHome() {
+            const container = document.getElementById('dose-times-container');
+            const today = new Date().toISOString().split('T')[0];
+            const currentTime = new Date().toTimeString().slice(0, 5);
+
+            if (medications.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💊</div>
+                        <p>No medications added yet</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.9rem;">Add your first medication to get started</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Check for medications needing refills
+            const lowStockMeds = medications.filter(med => {
+                return med.quantity !== undefined && med.quantity <= (med.refillAlert || 7);
+            });
+
+            const refillReminderTime = settings.refillReminderTime || '09:00';
+            const showRefillAlert = currentTime >= refillReminderTime && lowStockMeds.length > 0;
+
+            let refillSection = '';
+            if (showRefillAlert) {
+                refillSection = `
+                    <div class="refill-alert-section">
+                        <div class="refill-alert-header">
+                            <span class="refill-alert-icon">⚠️</span>
+                            <h3 class="refill-alert-title">Refills Needed (${lowStockMeds.length})</h3>
+                        </div>
+                        <div class="refill-alert-list">
+                            ${lowStockMeds.map(med => `
+                                <div class="refill-alert-item" onclick="editMedication('${med.id}')">
+                                    <div class="med-icon">${renderPill(med)}</div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600;">${med.name}${med.strength ? ` (${med.strength})` : ''}</div>
+                                        <div style="font-size: 0.85rem; color: #dc143c; font-weight: 600;">
+                                            ${med.quantity} pill(s) left
+                                        </div>
+                                    </div>
+                                    <button class="stock-btn" onclick="event.stopPropagation(); showAddStock('${med.id}')">
+                                        + Add Stock
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Collect all unique dose times from all medications
+            const allDoseTimes = new Set();
+            medications.forEach(med => {
+                if (!med.asNeeded && med.doseTimes) {
+                    med.doseTimes.forEach(time => {
+                        if (shouldTakeMedToday(med)) {
+                            allDoseTimes.add(time);
+                        }
+                    });
+                }
+            });
+
+            // Convert to sorted array
+            const sortedTimes = Array.from(allDoseTimes).sort();
+
+            if (sortedTimes.length === 0 && !showRefillAlert) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📅</div>
+                        <p>No scheduled doses for today</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.9rem;">All your medications are set to "as needed"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = refillSection + `
+                <div class="time-blocks-grid">
+                    ${sortedTimes.map((doseTime, idx) => {
+                        const isCurrent = currentTime >= doseTime && 
+                            (idx === sortedTimes.length - 1 || currentTime < sortedTimes[idx + 1]);
+
+                        const medsForTime = medications.filter(med => {
+                            if (med.asNeeded) return false;
+                            if (!med.doseTimes || !med.doseTimes.includes(doseTime)) return false;
+                            return shouldTakeMedToday(med);
+                        });
+
+                        const allTaken = medsForTime.every(med => getDoseStatus(today, med.id, doseTime) === 'taken');
+                        const anySkipped = medsForTime.some(med => getDoseStatus(today, med.id, doseTime) === 'skipped');
+
+                        return `
+                            <div class="compact-time-block ${isCurrent ? 'current' : ''} ${allTaken ? 'all-taken' : ''} ${anySkipped ? 'has-skipped' : ''}" 
+                                 onclick="openDoseDetail('${doseTime}', '${doseTime}')">
+                                <div class="compact-time-header">
+                                    <div class="compact-time-time" style="font-size: 1.25rem; font-weight: 600;">${doseTime}</div>
+                                </div>
+                                <div class="compact-pill-grid">
+                                    ${medsForTime.map(med => {
+                                        const status = getDoseStatus(today, med.id, doseTime);
+                                        return `
+                                            <div class="compact-pill-item ${status}" title="${med.name}">
+                                                ${renderPillSmall(med)}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                                ${allTaken ? '<div class="status-badge">✓ All Taken</div>' : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // Check if medication should be taken today based on schedule
+        function shouldTakeMedToday(med) {
+            if (med.asNeeded) return false;
+            
+            const scheduleType = med.scheduleType || 'daily';
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            if (scheduleType === 'daily') {
+                return true;
+            }
+            
+            if (scheduleType === 'specific') {
+                const currentDay = today.getDay();
+                const isSelectedDay = med.specificDays && med.specificDays.includes(currentDay);
+                
+                // Check if we've reached the start date
+                if (med.specificDaysStartDate) {
+                    const startDate = new Date(med.specificDaysStartDate);
+                    startDate.setHours(0, 0, 0, 0);
+                    today.setHours(0, 0, 0, 0);
+                    
+                    if (today < startDate) {
+                        return false; // Haven't started yet
+                    }
+                }
+                
+                return isSelectedDay;
+            }
+            
+            if (scheduleType === 'interval') {
+                const interval = med.intervalDays || 1;
+                const startDate = med.intervalStartDate || todayStr;
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                today.setHours(0, 0, 0, 0);
+                
+                const daysDiff = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+                
+                // Only take if we've reached start date and it's the right interval
+                return daysDiff >= 0 && daysDiff % interval === 0;
+            }
+            
+            return true;
+        }
+
+        // Open dose detail modal
+        let currentDoseTime = null;
+        let currentDoseTimeName = null;
+
+        function openDoseDetail(time, name) {
+            currentDoseTime = time;
+            currentDoseTimeName = name;
+            
+            document.getElementById('dose-detail-title').textContent = `${name} - ${time}`;
+            renderDoseDetail();
+            document.getElementById('dose-detail-modal').classList.add('active');
+        }
+
+        function closeDoseDetail() {
+            document.getElementById('dose-detail-modal').classList.remove('active');
+            renderHome(); // Refresh home view to show updated statuses
+        }
+
+        function renderDoseDetail() {
+            const today = new Date().toISOString().split('T')[0];
+            const container = document.getElementById('dose-detail-content');
+            
+            const medsForTime = medications.filter(med => {
+                if (med.asNeeded) return false;
+                if (!med.doseTimes || !med.doseTimes.some(t => t === currentDoseTime)) return false;
+                return shouldTakeMedToday(med);
+            });
+
+            container.innerHTML = `
+                <div class="dose-detail-list">
+                    ${medsForTime.map(med => {
+                        const status = getDoseStatus(today, med.id, currentDoseTime);
+                        const pillsPerDose = med.pillsPerDose || 1;
+                        
+                        return `
+                            <div class="dose-detail-item ${status}">
+                                <div class="dose-detail-icon">
+                                    ${renderPill(med)}
+                                </div>
+                                <div class="dose-detail-info">
+                                    <div class="dose-detail-name">${med.name}</div>
+                                    <div class="dose-detail-dose">
+                                        ${med.strength || ''}
+                                        ${pillsPerDose > 1 ? ` • Take ${pillsPerDose} pill${pillsPerDose !== 1 ? 's' : ''}` : ''}
+                                        ${med.instructions ? ` • ${med.instructions}` : ''}
+                                    </div>
+                                </div>
+                                <div class="dose-detail-actions">
+                                    <button class="dose-action-btn ${status === 'taken' ? 'taken' : 'unmarked'}" 
+                                            onclick="setDoseStatus('${med.id}', '${currentDoseTime}', 'taken')">
+                                        ${status === 'taken' ? '✓ Taken' : 'Mark Taken'}
+                                    </button>
+                                    <button class="dose-action-btn ${status === 'skipped' ? 'skipped' : 'unmarked'}" 
+                                            onclick="setDoseStatus('${med.id}', '${currentDoseTime}', 'skipped')">
+                                        ${status === 'skipped' ? 'Skipped' : 'Skip'}
+                                    </button>
+                                </div>
+                                <div class="dose-reminder-actions">
+                                    ${getReminderButtons(med.id, currentDoseTime)}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function setDoseStatus(medId, time, newStatus) {
+            const today = new Date().toISOString().split('T')[0];
+            const med = medications.find(m => m.id === medId);
+            if (!med) return;
+            
+            const pillsPerDose = med.pillsPerDose || 1;
+            
+            if (!doseLog[today]) doseLog[today] = {};
+            if (!doseLog[today][medId]) doseLog[today][medId] = {};
+
+            const currentStatus = doseLog[today][medId][time] || '';
+            
+            // If clicking the same status, unmark it
+            if (currentStatus === newStatus) {
+                doseLog[today][medId][time] = '';
+                if (newStatus === 'taken') {
+                    updateMedicationStock(medId, pillsPerDose); // Add pills back
+                }
+            } else {
+                // Changing to new status
+                if (currentStatus === 'taken') {
+                    updateMedicationStock(medId, pillsPerDose); // Add pills back from previous "taken"
+                }
+                
+                doseLog[today][medId][time] = newStatus;
+                
+                if (newStatus === 'taken') {
+                    updateMedicationStock(medId, -pillsPerDose); // Deduct pills
+                }
+            }
+
+            saveData();
+            renderDoseDetail();
+        }
+
+        function markAllTakenFromDetail() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            medications.forEach(med => {
+                if (med.asNeeded) return;
+                if (!med.doseTimes || !med.doseTimes.includes(currentDoseTime)) return;
+                if (!shouldTakeMedToday(med)) return;
+
+                const pillsPerDose = med.pillsPerDose || 1;
+
+                if (!doseLog[today]) doseLog[today] = {};
+                if (!doseLog[today][med.id]) doseLog[today][med.id] = {};
+
+                const current = doseLog[today][med.id][currentDoseTime] || '';
+                if (current !== 'taken') {
+                    if (current === 'taken') {
+                        updateMedicationStock(med.id, pillsPerDose); // Return previous pills
+                    }
+                    doseLog[today][med.id][currentDoseTime] = 'taken';
+                    updateMedicationStock(med.id, -pillsPerDose);
+                }
+            });
+
+            saveData();
+            renderDoseDetail();
+            showNotification('All doses marked as taken');
+        }
+
+        // Get reminder info for a dose
+        function getReminderInfo(medId, time) {
+            const today = new Date().toISOString().split('T')[0];
+            if (!reminders[today] || !reminders[today][medId] || !reminders[today][medId][time]) {
+                return null;
+            }
+            return reminders[today][medId][time];
+        }
+
+        // Get reminder buttons HTML
+        function getReminderButtons(medId, time) {
+            const reminderInfo = getReminderInfo(medId, time);
+            const snoozeCount = reminderInfo?.snoozeCount || 0;
+            const canSnooze = snoozeCount < 3;
+            const rescheduledTo = reminderInfo?.rescheduledTo;
+            
+            let html = `
+                <button class="reminder-btn" 
+                        onclick="snoozeDose('${medId}', '${time}')"
+                        ${!canSnooze ? 'disabled' : ''}>
+                    ⏰ Snooze 10min ${snoozeCount > 0 ? `(${snoozeCount}/3)` : ''}
+                </button>
+                <button class="reminder-btn" onclick="rescheduleDose('${medId}', '${time}')">
+                    📅 Reschedule
+                </button>
+            `;
+            
+            if (reminderInfo?.snoozedUntil) {
+                const snoozedTime = new Date(reminderInfo.snoozedUntil);
+                const timeStr = snoozedTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                html += `<div class="reminder-info">Snoozed until ${timeStr}</div>`;
+            }
+            
+            if (rescheduledTo) {
+                html += `<div class="reminder-info">Rescheduled to ${rescheduledTo}</div>`;
+            }
+            
+            return html;
+        }
+
+        // Snooze a single dose
+        function snoozeDose(medId, time) {
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (!reminders[today]) reminders[today] = {};
+            if (!reminders[today][medId]) reminders[today][medId] = {};
+            if (!reminders[today][medId][time]) reminders[today][medId][time] = { snoozeCount: 0 };
+            
+            const reminderInfo = reminders[today][medId][time];
+            
+            if (reminderInfo.snoozeCount >= 3) {
+                showNotification('Maximum snoozes reached (3)', 'info');
+                return;
+            }
+            
+            reminderInfo.snoozeCount = (reminderInfo.snoozeCount || 0) + 1;
+            reminderInfo.snoozedUntil = Date.now() + (10 * 60 * 1000); // 10 minutes from now
+            
+            saveData();
+            renderDoseDetail();
+            showNotification('Dose snoozed for 10 minutes');
+        }
+
+        // Reschedule a single dose
+        function rescheduleDose(medId, time) {
+            const newTime = prompt('Enter new time (HH:MM format):', time);
+            if (!newTime) return;
+            
+            // Validate time format
+            if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(newTime)) {
+                alert('Invalid time format. Please use HH:MM (e.g., 14:30)');
+                return;
+            }
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (!reminders[today]) reminders[today] = {};
+            if (!reminders[today][medId]) reminders[today][medId] = {};
+            if (!reminders[today][medId][time]) reminders[today][medId][time] = {};
+            
+            reminders[today][medId][time].rescheduledTo = newTime;
+            
+            saveData();
+            renderDoseDetail();
+            showNotification(`Dose rescheduled to ${newTime}`);
+        }
+
+        // Snooze all doses in current time
+        function snoozeAll() {
+            const today = new Date().toISOString().split('T')[0];
+            
+            medications.forEach(med => {
+                if (med.asNeeded) return;
+                if (!med.doseTimes || !med.doseTimes.includes(currentDoseTime)) return;
+                if (!shouldTakeMedToday(med)) return;
+                
+                if (!reminders[today]) reminders[today] = {};
+                if (!reminders[today][med.id]) reminders[today][med.id] = {};
+                if (!reminders[today][med.id][currentDoseTime]) {
+                    reminders[today][med.id][currentDoseTime] = { snoozeCount: 0 };
+                }
+                
+                const reminderInfo = reminders[today][med.id][currentDoseTime];
+                
+                if (reminderInfo.snoozeCount < 3) {
+                    reminderInfo.snoozeCount = (reminderInfo.snoozeCount || 0) + 1;
+                    reminderInfo.snoozedUntil = Date.now() + (10 * 60 * 1000);
+                }
+            });
+            
+            saveData();
+            renderDoseDetail();
+            showNotification('All doses snoozed for 10 minutes');
+        }
+
+        // Reschedule all doses in current time
+        function rescheduleAll() {
+            const newTime = prompt('Enter new time for all doses (HH:MM format):', currentDoseTime);
+            if (!newTime) return;
+            
+            // Validate time format
+            if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(newTime)) {
+                alert('Invalid time format. Please use HH:MM (e.g., 14:30)');
+                return;
+            }
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            medications.forEach(med => {
+                if (med.asNeeded) return;
+                if (!med.doseTimes || !med.doseTimes.includes(currentDoseTime)) return;
+                if (!shouldTakeMedToday(med)) return;
+                
+                if (!reminders[today]) reminders[today] = {};
+                if (!reminders[today][med.id]) reminders[today][med.id] = {};
+                if (!reminders[today][med.id][currentDoseTime]) {
+                    reminders[today][med.id][currentDoseTime] = {};
+                }
+                
+                reminders[today][med.id][currentDoseTime].rescheduledTo = newTime;
+            });
+            
+            saveData();
+            renderDoseDetail();
+            showNotification(`All doses rescheduled to ${newTime}`);
+        }
+
+        // Render pill visual
+        function renderPill(med) {
+            const shape = shapes.find(s => s.id === (med.shape || 'oval'));
+            const color = colors.find(c => c.id === (med.color || 'white'));
+            const borderColor = color.border || 'none';
+            
+            return `
+                <div class="pill-visual">
+                    <svg viewBox="0 0 50 30" style="width: 50px; height: 30px; color: ${color.hex}; ${borderColor !== 'none' ? `filter: drop-shadow(0 0 1px ${borderColor})` : ''}">
+                        ${shape.svg}
+                    </svg>
+                </div>
+            `;
+        }
+
+        // Get dose status
+        function getDoseStatus(date, medId, time) {
+            if (!doseLog[date] || !doseLog[date][medId]) return '';
+            return doseLog[date][medId][time] || '';
+        }
+
+        // Update medication stock
+        function updateMedicationStock(medId, change) {
+            const med = medications.find(m => m.id === medId);
+            if (!med) return;
+
+            med.quantity = Math.max(0, (med.quantity || 0) + change);
+            
+            if (med.quantity <= (med.refillAlert || 7) && med.quantity > 0) {
+                showNotification(`Low stock: ${med.name} (${med.quantity} left)`, 'info');
+            }
+        }
+
+        // Render medications list
+        function renderMedications() {
+            const container = document.getElementById('medications-list');
+            
+            if (medications.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💊</div>
+                        <p>No medications yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort medications alphabetically by name
+            const sortedMeds = [...medications].sort((a, b) => a.name.localeCompare(b.name));
+
+            container.innerHTML = sortedMeds.map(med => {
+                const nextDose = getNextDoseTime(med);
+                const lowStock = med.quantity !== undefined && med.quantity <= (med.refillAlert || 7);
+                const hasQuantity = med.quantity !== undefined;
+                
+                return `
+                    <div class="med-item">
+                        <div class="med-icon" onclick="editMedication('${med.id}')">${renderPill(med)}</div>
+                        <div class="med-info" onclick="editMedication('${med.id}')" style="flex: 1;">
+                            <div class="med-title">${med.name}${med.strength ? ` (${med.strength})` : ''}</div>
+                            <div class="med-subtitle">
+                                ${med.asNeeded ? 'Take as needed' : (nextDose || 'Scheduled')}
+                            </div>
+                            ${hasQuantity ? `
+                                <div class="med-subtitle ${lowStock ? 'med-stock-low' : ''}">
+                                    ${med.quantity} pill(s) left${lowStock ? ' ⚠️' : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                        ${hasQuantity ? `
+                            <button class="stock-btn" onclick="event.stopPropagation(); showAddStock('${med.id}')" 
+                                    style="margin-left: 0.5rem; align-self: center;">
+                                + Add Stock
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Get next dose time for a medication
+        function getNextDoseTime(med) {
+            if (med.asNeeded || !med.doseTimes || med.doseTimes.length === 0) return null;
+            
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const currentTime = now.toTimeString().slice(0, 5);
+            
+            // Check if medication should be taken today
+            if (!shouldTakeMedToday(med)) {
+                // Find next day it should be taken
+                if (med.scheduleType === 'specific' && med.specificDays) {
+                    const currentDay = now.getDay();
+                    
+                    // Check if start date is in the future
+                    if (med.specificDaysStartDate) {
+                        const startDate = new Date(med.specificDaysStartDate);
+                        startDate.setHours(0, 0, 0, 0);
+                        const todayDate = new Date(now);
+                        todayDate.setHours(0, 0, 0, 0);
+                        
+                        if (startDate > todayDate) {
+                            // Start date is in the future
+                            const dayName = startDate.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
+                            return `Next reminder: ${dayName}, ${med.doseTimes[0]}`;
+                        }
+                    }
+                    
+                    // Find next occurrence of selected day
+                    const nextDay = med.specificDays.find(d => d > currentDay) || med.specificDays[0];
+                    const daysUntil = nextDay > currentDay ? nextDay - currentDay : 7 - currentDay + nextDay;
+                    const nextDate = new Date(now);
+                    nextDate.setDate(now.getDate() + daysUntil);
+                    const dayName = nextDate.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
+                    return `Next reminder: ${dayName}, ${med.doseTimes[0]}`;
+                }
+                
+                if (med.scheduleType === 'interval') {
+                    const interval = med.intervalDays || 1;
+                    const startDate = new Date(med.intervalStartDate || today);
+                    const todayDate = new Date();
+                    todayDate.setHours(0, 0, 0, 0);
+                    startDate.setHours(0, 0, 0, 0);
+                    
+                    let nextDoseDate = new Date(startDate);
+                    while (nextDoseDate <= todayDate) {
+                        nextDoseDate.setDate(nextDoseDate.getDate() + interval);
+                    }
+                    
+                    const dayName = nextDoseDate.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
+                    return `Next reminder: ${dayName}, ${med.doseTimes[0]}`;
+                }
+                
+                return `Next reminder: Tomorrow, ${med.doseTimes[0]}`;
+            }
+            
+            // Find next dose today
+            const nextToday = med.doseTimes.find(t => t > currentTime);
+            if (nextToday) {
+                return `Next reminder: Today, ${nextToday}`;
+            }
+            
+            // Otherwise find next scheduled day
+            if (med.scheduleType === 'specific' && med.specificDays) {
+                const currentDay = now.getDay();
+                const nextDay = med.specificDays.find(d => d > currentDay) || med.specificDays[0];
+                const daysUntil = nextDay > currentDay ? nextDay - currentDay : 7 - currentDay + nextDay;
+                const nextDate = new Date(now);
+                nextDate.setDate(now.getDate() + daysUntil);
+                const dayName = nextDate.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
+                return `Next reminder: ${dayName}, ${med.doseTimes[0]}`;
+            }
+            
+            if (med.scheduleType === 'interval') {
+                const interval = med.intervalDays || 1;
+                const nextDate = new Date(now);
+                nextDate.setDate(now.getDate() + interval);
+                const dayName = nextDate.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
+                return `Next reminder: ${dayName}, ${med.doseTimes[0]}`;
+            }
+            
+            // Default: tomorrow
+            const tomorrow = new Date(now);
+            tomorrow.setDate(now.getDate() + 1);
+            const tomorrowDay = tomorrow.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
+            return `Next reminder: ${tomorrowDay}, ${med.doseTimes[0]}`;
+        }
+
+        // Modal functions
+        function showAddMedModal() {
+            editingMedId = null;
+            document.getElementById('modal-title').textContent = 'Add Medication';
+            document.getElementById('delete-btn').style.display = 'none';
+            document.getElementById('med-form').reset();
+            selectedShape = 'oval';
+            selectedColor = 'white';
+            selectedColor2 = 'white';
+            renderShapeSelector();
+            renderColorSelector();
+            renderColor2Selector();
+            renderDoseTimes();
+            document.getElementById('color2-group').style.display = 'none';
+            document.getElementById('med-modal').classList.add('active');
+        }
+
+        function editMedication(medId) {
+            const med = medications.find(m => m.id === medId);
+            if (!med) return;
+
+            editingMedId = medId;
+            document.getElementById('modal-title').textContent = 'Edit Medication';
+            document.getElementById('delete-btn').style.display = 'block';
+            
+            document.getElementById('med-name').value = med.name;
+            document.getElementById('med-strength').value = med.strength || '';
+            document.getElementById('pills-per-dose').value = med.pillsPerDose || 1;
+            document.getElementById('med-quantity').value = med.quantity || 0;
+            document.getElementById('med-refill-alert').value = med.refillAlert || 7;
+            document.getElementById('med-instructions').value = med.instructions || '';
+            document.getElementById('as-needed').checked = med.asNeeded || false;
+            
+            const scheduleType = med.scheduleType || 'daily';
+            document.getElementById('schedule-type').value = scheduleType;
+            
+            if (scheduleType === 'specific' && med.specificDays) {
+                document.querySelectorAll('.day-check').forEach(cb => {
+                    cb.checked = med.specificDays.includes(parseInt(cb.value));
+                });
+            }
+            
+            if (scheduleType === 'interval' && med.intervalDays) {
+                document.getElementById('interval-days').value = med.intervalDays;
+                
+                // Calculate days from now for the start date
+                if (med.intervalStartDate) {
+                    const startDate = new Date(med.intervalStartDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    startDate.setHours(0, 0, 0, 0);
+                    const daysFromNow = Math.round((startDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    // Set the dropdown value (clamp to 0-7 range)
+                    const clampedDays = Math.max(0, Math.min(7, daysFromNow));
+                    document.getElementById('interval-start-date').value = clampedDays;
+                    updateIntervalPreview();
+                }
+            }
+            
+            selectedShape = med.shape || 'oval';
+            selectedColor = med.color || 'white';
+            selectedColor2 = med.color2 || 'white';
+            
+            renderShapeSelector();
+            renderColorSelector();
+            renderColor2Selector();
+            renderDoseTimes(med.doseTimes || ['08:00']);
+            updateScheduleType();
+            setupAsNeededToggle();
+            
+            // Show color2 selector if dual capsule
+            const shape = shapes.find(s => s.id === selectedShape);
+            document.getElementById('color2-group').style.display = shape && shape.isDual ? 'block' : 'none';
+            
+            document.getElementById('med-modal').classList.add('active');
+        }
+
+        function closeMedModal() {
+            document.getElementById('med-modal').classList.remove('active');
+        }
+
+        function saveMedication(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('med-name').value;
+            const strength = document.getElementById('med-strength').value;
+            const pillsPerDose = parseFloat(document.getElementById('pills-per-dose').value) || 1;
+            const quantity = parseFloat(document.getElementById('med-quantity').value) || 0;
+            const refillAlert = parseInt(document.getElementById('med-refill-alert').value);
+            const instructions = document.getElementById('med-instructions').value;
+            const asNeeded = document.getElementById('as-needed').checked;
+            const scheduleType = document.getElementById('schedule-type').value;
+            
+            const doseTimeInputs = document.querySelectorAll('.dose-time-input');
+            const doseTimes = Array.from(doseTimeInputs).map(input => input.value).filter(Boolean);
+
+            let scheduleData = { scheduleType };
+            
+            if (scheduleType === 'specific') {
+                const dayChecks = document.querySelectorAll('.day-check:checked');
+                scheduleData.specificDays = Array.from(dayChecks).map(cb => parseInt(cb.value));
+                
+                // Set start date to today or next occurrence of selected day
+                if (scheduleData.specificDays.length > 0) {
+                    const today = new Date();
+                    const currentDay = today.getDay();
+                    
+                    // Check if today is one of the selected days
+                    if (scheduleData.specificDays.includes(currentDay)) {
+                        // Start today
+                        scheduleData.specificDaysStartDate = today.toISOString().split('T')[0];
+                    } else {
+                        // Find next occurrence
+                        let daysUntilNext = 7;
+                        for (let selectedDay of scheduleData.specificDays) {
+                            let daysAway = selectedDay - currentDay;
+                            if (daysAway < 0) daysAway += 7;
+                            if (daysAway < daysUntilNext) {
+                                daysUntilNext = daysAway;
+                            }
+                        }
+                        
+                        const startDate = new Date(today);
+                        startDate.setDate(today.getDate() + daysUntilNext);
+                        scheduleData.specificDaysStartDate = startDate.toISOString().split('T')[0];
+                    }
+                }
+            } else if (scheduleType === 'interval') {
+                const intervalDays = parseInt(document.getElementById('interval-days').value) || 1;
+                const daysFromNow = parseInt(document.getElementById('interval-start-date').value) || 0;
+                
+                // Calculate the actual start date
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() + daysFromNow);
+                
+                scheduleData.intervalDays = intervalDays;
+                scheduleData.intervalStartDate = startDate.toISOString().split('T')[0];
+            }
+
+            const medData = {
+                name,
+                strength,
+                pillsPerDose,
+                quantity,
+                refillAlert,
+                instructions,
+                asNeeded,
+                doseTimes: asNeeded ? [] : doseTimes,
+                shape: selectedShape,
+                color: selectedColor,
+                ...scheduleData
+            };
+
+            // Add color2 only if dual capsule is selected
+            const shape = shapes.find(s => s.id === selectedShape);
+            if (shape && shape.isDual) {
+                medData.color2 = selectedColor2;
+            }
+
+            if (editingMedId) {
+                const med = medications.find(m => m.id === editingMedId);
+                Object.assign(med, medData);
+            } else {
+                medData.id = Date.now().toString();
+                medications.push(medData);
+            }
+
+            saveData();
+            closeMedModal();
+            renderHome();
+            renderMedications();
+            showNotification(editingMedId ? 'Medication updated' : 'Medication added');
+        }
+
+        function deleteMedication() {
+            if (!confirm('Are you sure you want to delete this medication?')) return;
+            
+            medications = medications.filter(m => m.id !== editingMedId);
+            saveData();
+            closeMedModal();
+            renderHome();
+            renderMedications();
+            showNotification('Medication deleted');
+        }
+
+        // Render shape selector
+        function renderShapeSelector() {
+            const container = document.getElementById('shape-selector');
+            container.innerHTML = shapes.map(shape => {
+                let svgContent = shape.svg;
+                
+                // For dual capsule, show it with two colors in preview
+                if (shape.isDual) {
+                    svgContent = svgContent
+                        .replace('COLOR1', '#888')
+                        .replace('COLOR2', '#666');
+                } else {
+                    svgContent = svgContent
+                        .replace('fill="currentColor"', 'fill="#888"')
+                        .replace(/currentColor/g, '#888');
+                }
+                
+                return `
+                    <div class="appearance-option ${selectedShape === shape.id ? 'selected' : ''}" 
+                         onclick="selectShape('${shape.id}')" title="${shape.name}">
+                        <svg viewBox="0 0 50 30" style="width: 40px; height: 24px;">
+                            <g stroke="#555" stroke-width="1.5">
+                                ${svgContent}
+                            </g>
+                        </svg>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectShape(shapeId) {
+            selectedShape = shapeId;
+            renderShapeSelector();
+            
+            // Show/hide second color selector based on shape
+            const shape = shapes.find(s => s.id === shapeId);
+            const color2Group = document.getElementById('color2-group');
+            if (color2Group) {
+                color2Group.style.display = shape && shape.isDual ? 'block' : 'none';
+            }
+        }
+
+        // Render color selector
+        function renderColorSelector() {
+            const container = document.getElementById('color-selector');
+            container.innerHTML = colors.map(color => `
+                <div class="appearance-option ${selectedColor === color.id ? 'selected' : ''}" 
+                     onclick="selectColor('${color.id}')" 
+                     style="background: ${color.hex}; ${color.border ? 'border-color: ' + color.border : ''}"
+                     title="${color.name}">
+                </div>
+            `).join('');
+        }
+
+        function selectColor(colorId) {
+            selectedColor = colorId;
+            renderColorSelector();
+        }
+
+        // Render second color selector
+        function renderColor2Selector() {
+            const container = document.getElementById('color2-selector');
+            if (!container) return;
+            
+            container.innerHTML = colors.map(color => `
+                <div class="appearance-option ${selectedColor2 === color.id ? 'selected' : ''}" 
+                     onclick="selectColor2('${color.id}')" 
+                     style="background: ${color.hex}; ${color.border ? 'border-color: ' + color.border : ''}"
+                     title="${color.name}">
+                </div>
+            `).join('');
+        }
+
+        function selectColor2(colorId) {
+            selectedColor2 = colorId;
+            renderColor2Selector();
+        }
+
+        // Dose times management
+        function renderDoseTimes(times = ['08:00']) {
+            const container = document.getElementById('dose-times');
+            container.innerHTML = times.map((time, idx) => `
+                <div class="time-input-group">
+                    <input type="time" class="form-input dose-time-input" value="${time}" required>
+                    ${times.length > 1 ? `<button type="button" class="remove-time-btn" onclick="removeDoseTime(${idx})">Remove</button>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function addDoseTime() {
+            const inputs = document.querySelectorAll('.dose-time-input');
+            const times = Array.from(inputs).map(input => input.value);
+            times.push('12:00');
+            renderDoseTimes(times);
+        }
+
+        function removeDoseTime(idx) {
+            const inputs = document.querySelectorAll('.dose-time-input');
+            const times = Array.from(inputs).map(input => input.value);
+            times.splice(idx, 1);
+            renderDoseTimes(times);
+        }
+
+        function setupAsNeededToggle() {
+            const checkbox = document.getElementById('as-needed');
+            const scheduleContainer = document.getElementById('schedule-container');
+            
+            checkbox.onchange = () => {
+                scheduleContainer.style.display = checkbox.checked ? 'none' : 'block';
+            };
+            
+            scheduleContainer.style.display = checkbox.checked ? 'none' : 'block';
+        }
+
+        function updateScheduleType() {
+            const scheduleType = document.getElementById('schedule-type').value;
+            const specificDaysContainer = document.getElementById('specific-days-container');
+            const intervalContainer = document.getElementById('interval-container');
+            
+            specificDaysContainer.style.display = scheduleType === 'specific' ? 'block' : 'none';
+            intervalContainer.style.display = scheduleType === 'interval' ? 'block' : 'none';
+            
+            if (scheduleType === 'interval') {
+                updateIntervalPreview();
+                
+                // Add event listeners for preview updates
+                const intervalDaysInput = document.getElementById('interval-days');
+                const intervalStartSelect = document.getElementById('interval-start-date');
+                
+                intervalDaysInput.onchange = updateIntervalPreview;
+                intervalStartSelect.onchange = updateIntervalPreview;
+            }
+        }
+
+        function updateIntervalPreview() {
+            const intervalDays = parseInt(document.getElementById('interval-days').value) || 1;
+            const daysFromNow = parseInt(document.getElementById('interval-start-date').value) || 0;
+            const previewElement = document.getElementById('interval-start-preview');
+            
+            if (!previewElement) return;
+            
+            // Calculate start date
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() + daysFromNow);
+            const startDateStr = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            
+            // Calculate next few doses
+            const doses = [];
+            for (let i = 0; i < 3; i++) {
+                const doseDate = new Date(startDate);
+                doseDate.setDate(startDate.getDate() + (i * intervalDays));
+                const dateStr = doseDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                doses.push(dateStr);
+            }
+            
+            previewElement.innerHTML = `First dose: ${startDateStr}<br>Then: ${doses.slice(1).join(', ')}...`;
+        }
+
+        // Settings
+        function showSettings() {
+            // Load current refill reminder time into the input
+            document.getElementById('refill-reminder-time').value = settings.refillReminderTime || '09:00';
+            
+            // Load notification setting
+            const notifCheckbox = document.getElementById('notifications-enabled');
+            notifCheckbox.checked = settings.notificationsEnabled || false;
+            
+            // Update status display
+            const statusDiv = document.getElementById('notification-status');
+            if (settings.notificationsEnabled && Notification.permission === 'granted') {
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = '#e8f5e9';
+                statusDiv.style.color = '#2e7d32';
+                statusDiv.textContent = '✓ Notifications enabled - You\'ll receive reminders for scheduled doses';
+            } else if (settings.notificationsEnabled && Notification.permission === 'denied') {
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = '#ffebee';
+                statusDiv.style.color = '#c62828';
+                statusDiv.textContent = '✗ Notification permission denied. Please enable in browser settings.';
+            } else {
+                statusDiv.style.display = 'none';
+            }
+            
+            document.getElementById('settings-modal').classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').classList.remove('active');
+        }
+
+        function updateRefillReminderTime() {
+            const newTime = document.getElementById('refill-reminder-time').value;
+            if (newTime) {
+                settings.refillReminderTime = newTime;
+                saveData();
+                showNotification('Refill reminder time updated');
+            }
+        }
+
+        // Add Stock functionality
+        let addStockMedId = null;
+
+        function showAddStock(medId) {
+            const med = medications.find(m => m.id === medId);
+            if (!med) return;
+            
+            addStockMedId = medId;
+            
+            // Populate modal
+            document.getElementById('add-stock-icon').innerHTML = renderPill(med);
+            document.getElementById('add-stock-name').textContent = `${med.name}${med.strength ? ` (${med.strength})` : ''}`;
+            document.getElementById('add-stock-current').textContent = `You have ${med.quantity || 0} pill(s) left.`;
+            document.getElementById('add-stock-amount').value = '';
+            
+            document.getElementById('add-stock-modal').classList.add('active');
+            
+            // Focus the input
+            setTimeout(() => {
+                document.getElementById('add-stock-amount').focus();
+            }, 100);
+        }
+
+        function showAddStockFromForm() {
+            if (!editingMedId) {
+                alert('Please save the medication first before adding stock.');
+                return;
+            }
+            
+            // Save current form state first
+            const currentQuantity = parseFloat(document.getElementById('med-quantity').value) || 0;
+            const med = medications.find(m => m.id === editingMedId);
+            if (med) {
+                med.quantity = currentQuantity;
+                saveData();
+            }
+            
+            showAddStock(editingMedId);
+        }
+
+        function closeAddStock() {
+            document.getElementById('add-stock-modal').classList.remove('active');
+            addStockMedId = null;
+        }
+
+        function saveAddStock() {
+            const amount = parseFloat(document.getElementById('add-stock-amount').value);
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid quantity to add.');
+                return;
+            }
+            
+            const med = medications.find(m => m.id === addStockMedId);
+            if (!med) return;
+            
+            const oldQuantity = med.quantity || 0;
+            med.quantity = oldQuantity + amount;
+            
+            saveData();
+            closeAddStock();
+            
+            // Update displays
+            renderMedications();
+            
+            // If editing this med, update the quantity field
+            if (editingMedId === addStockMedId) {
+                document.getElementById('med-quantity').value = med.quantity;
+            }
+            
+            showNotification(`Added ${amount} pill(s). New total: ${med.quantity}`);
+        }
+
+        // Data export/import
+        function exportData() {
+            const data = {
+                version: APP_VERSION,
+                medications,
+                doseLog,
+                reminders,
+                settings,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `medtracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showNotification('Data exported successfully');
+        }
+
+        function importData() {
+            document.getElementById('import-file').click();
+        }
+
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (!data.medications || !Array.isArray(data.medications)) {
+                        throw new Error('Invalid backup file format');
+                    }
+
+                    medications = data.medications;
+                    doseLog = data.doseLog || {};
+                    reminders = data.reminders || {};
+                    settings = Object.assign({ refillReminderTime: '09:00' }, data.settings || {});
+                    
+                    saveData();
+                    renderHome();
+                    renderMedications();
+                    
+                    showNotification(`Data imported successfully from v${data.version || '1.0'}`);
+                } catch (error) {
+                    alert('Error importing data: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
