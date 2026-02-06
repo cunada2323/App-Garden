@@ -67,9 +67,30 @@ Each application should be structured as:
 - Feature branches: `claude/create-<feature>-<session-id>`
 - Development branch: `claude/create-claude-md-8uJIi`
 
+### Version Management
+**CRITICAL**: Always increment the version number before committing changes to any application.
+
+For `medication-tracker.html`:
+1. Locate `const APP_VERSION = 'X.X';` in the JavaScript section
+2. Increment the version number (e.g., '2.3' → '2.4')
+3. Use semantic versioning guidelines:
+   - Major version (X.0): Complete rewrites or major feature additions
+   - Minor version (2.X): New features, significant enhancements
+   - Patch version would be (2.3.X) if using three digits: Bug fixes, small tweaks
+
+**Example workflow**:
+```javascript
+// Before changes
+const APP_VERSION = '2.3';
+
+// After adding a feature
+const APP_VERSION = '2.4';
+```
+
 ### Commit Messages
 - Use clear, descriptive commit messages
-- Examples: "V2.3", "Adding medication tracker html", "Delete Med tracker.html.txt"
+- Include version number in commit when relevant
+- Examples: "V2.4 - Add time selection for Mark All Taken", "V2.3", "Adding medication tracker html"
 
 ## Testing
 
@@ -99,8 +120,9 @@ Each application should be structured as:
 1. Read the entire file to understand the structure
 2. Locate the relevant section (HTML, CSS, or JS)
 3. Make focused changes without over-engineering
-4. Test the changes thoroughly
-5. Commit with clear message
+4. **Increment the version number** (see Version Management above)
+5. Test the changes thoroughly
+6. Commit with clear message including version number
 
 ### Working with LocalStorage
 - Each app uses its own LocalStorage keys
