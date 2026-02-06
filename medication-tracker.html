@@ -1097,6 +1097,43 @@
         </div>
     </div>
 
+    <!-- Mark All Taken Time Selection Modal -->
+    <div id="mark-all-time-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">When were these taken?</h2>
+                <button class="close-btn" onclick="closeMarkAllTimeModal()">×</button>
+            </div>
+
+            <div style="padding: 1rem 0;">
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+                    <div style="font-weight: 600; margin-bottom: 0.5rem;">Marking all doses for:</div>
+                    <div id="mark-all-dose-time" style="font-size: 1.1rem; color: #4A9B9B;"></div>
+                </div>
+
+                <button class="btn-primary" onclick="markAllTakenNow()" style="margin-bottom: 0.5rem; width: 100%;">
+                    Mark Now
+                </button>
+
+                <button class="btn-primary" onclick="markAllTakenOnTime()" style="margin-bottom: 0.5rem; width: 100%;">
+                    On Time (Scheduled Time)
+                </button>
+
+                <div style="text-align: center; margin: 1rem 0; color: #666; font-size: 0.9rem;">or</div>
+
+                <div class="form-group">
+                    <label class="form-label">Set Custom Time</label>
+                    <input type="time" class="form-input" id="mark-all-custom-time">
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn-secondary" onclick="closeMarkAllTimeModal()" style="flex: 1;">Cancel</button>
+                    <button class="btn-primary" onclick="markAllTakenCustomTime()" style="flex: 1;">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Add Ad-Hoc Dose Modal -->
     <div id="adhoc-dose-modal" class="modal">
         <div class="modal-content" style="max-width: 400px;">
@@ -1892,26 +1929,27 @@
 
         function toggleMarkAll() {
             const today = getTodayLocal();
-            
+
             // Check if all are taken
             const medsForTime = medications.filter(med => {
                 if (med.asNeeded) return false;
                 if (!med.doseTimes || !med.doseTimes.includes(currentDoseTime)) return false;
                 return shouldTakeMedToday(med);
             });
-            
+
             const allTaken = medsForTime.every(med => {
-                return getDoseStatus(today, med.id, currentDoseTime) === 'taken';
+                const doseInfo = getDoseStatus(today, med.id, currentDoseTime);
+                return doseInfo.status === 'taken';
             });
-            
+
             if (allTaken) {
                 unmarkAll();
             } else {
-                markAllTakenFromDetail();
+                openMarkAllTimeModal();
             }
         }
         
-        function markAllTakenFromDetail() {
+        function markAllTakenFromDetail(timestamp) {
             const today = getTodayLocal();
             medications.forEach(med => {
                 if (med.asNeeded) return;
@@ -1920,12 +1958,15 @@
                 const pillsPerDose = med.pillsPerDose || 1;
                 if (!doseLog[today]) doseLog[today] = {};
                 if (!doseLog[today][med.id]) doseLog[today][med.id] = {};
-                const current = doseLog[today][med.id][currentDoseTime] || '';
-                if (current !== 'taken') {
-                    if (current === 'taken') {
-                        updateMedicationStock(med.id, pillsPerDose);
-                    }
-                    doseLog[today][med.id][currentDoseTime] = 'taken';
+
+                const currentEntry = doseLog[today][med.id][currentDoseTime];
+                const currentStatus = currentEntry ? (typeof currentEntry === 'string' ? currentEntry : currentEntry.status) : '';
+
+                if (currentStatus !== 'taken') {
+                    doseLog[today][med.id][currentDoseTime] = {
+                        status: 'taken',
+                        timestamp: timestamp
+                    };
                     updateMedicationStock(med.id, -pillsPerDose);
                 }
             });
@@ -1943,11 +1984,14 @@
                 const pillsPerDose = med.pillsPerDose || 1;
                 if (!doseLog[today]) doseLog[today] = {};
                 if (!doseLog[today][med.id]) doseLog[today][med.id] = {};
-                const current = doseLog[today][med.id][currentDoseTime] || '';
-                if (current === 'taken') {
+
+                const currentEntry = doseLog[today][med.id][currentDoseTime];
+                const currentStatus = currentEntry ? (typeof currentEntry === 'string' ? currentEntry : currentEntry.status) : '';
+
+                if (currentStatus === 'taken') {
                     updateMedicationStock(med.id, pillsPerDose); // Add pills back
                 }
-                doseLog[today][med.id][currentDoseTime] = ''; // Clear status
+                doseLog[today][med.id][currentDoseTime] = { status: '', timestamp: null }; // Clear status
             });
             saveData();
             renderDoseDetail();
@@ -2721,7 +2765,47 @@
             setDoseStatusWithTime(medId, time, 'taken', timestamp);
             closeTimeTakenModal();
         }
-        
+
+        // Mark All Taken Time Modal Functions
+        function openMarkAllTimeModal() {
+            document.getElementById('mark-all-dose-time').textContent = currentDoseTimeName || currentDoseTime;
+
+            const customTimeInput = document.getElementById('mark-all-custom-time');
+            customTimeInput.value = getCurrentTime();
+
+            document.getElementById('mark-all-time-modal').classList.add('active');
+        }
+
+        function closeMarkAllTimeModal() {
+            document.getElementById('mark-all-time-modal').classList.remove('active');
+        }
+
+        function markAllTakenNow() {
+            const viewDate = getViewDate();
+            const timestamp = `${viewDate}T${getCurrentTime()}`;
+            markAllTakenFromDetail(timestamp);
+            closeMarkAllTimeModal();
+        }
+
+        function markAllTakenOnTime() {
+            const viewDate = getViewDate();
+            const timestamp = `${viewDate}T${currentDoseTime}`;
+            markAllTakenFromDetail(timestamp);
+            closeMarkAllTimeModal();
+        }
+
+        function markAllTakenCustomTime() {
+            const customTime = document.getElementById('mark-all-custom-time').value;
+            if (!customTime) {
+                alert('Please select a time');
+                return;
+            }
+            const viewDate = getViewDate();
+            const timestamp = `${viewDate}T${customTime}`;
+            markAllTakenFromDetail(timestamp);
+            closeMarkAllTimeModal();
+        }
+
         function setDoseStatusWithTime(medId, time, status, timestamp) {
             const viewDate = getViewDate();
             const med = medications.find(m => m.id === medId);
